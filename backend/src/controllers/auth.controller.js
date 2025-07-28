@@ -1,7 +1,7 @@
 import { generateToken } from '../lib/utils.js';
 import User from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
-
+import cloudinary from '../lib/cloudinary.js';
 
 export const signup = async (req, res) => {
   // Handle user signup
@@ -90,3 +90,39 @@ export const logout = (req, res) => {
     return res.status(500).json({ message: 'Something went wrong. Please try again later.' });
   }
 };
+
+
+export const updateProfile = async (req, res) => {
+    try{
+      const {profilePic} = req.body;
+      const userid = req.user._id;
+      if (!profilePic) {
+        return res.status(400).json({ message: 'Please provide a profile picture.' });     return res.status(404).json({ message: 'User not found.' });
+      }
+    const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+      folder: 'profile_pics',
+      width: 150,
+      height: 150,
+      crop: 'fill',// Fill the entire image
+    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userid,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    ).select('-password'); // Exclude password from the response
+  res.status(200).json(updatedUser);
+  }catch (error) {
+    console.error('Update profile error:', error.message);
+    return res.status(500).json({ message: 'Something went wrong. Please try again later.' });  
+  }
+};
+
+
+export const checkAuth = (req, res) => {
+  try {
+     res.status(200).json(req.user);  
+  } catch (error) {
+    console.error('Check auth error:', error.message);
+    return res.status(500).json({ message: 'Something went wrong. Please try again later.' });
+  }
+}
