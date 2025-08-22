@@ -4,12 +4,13 @@ import { login, signup, logout,checkAuth,updateProfile } from '../controllers/au
 import { protectRoute } from '../middleware/auth.middleware.js';
 const router=express.Router();
 
-router.post('/login',login);
+
 router.post('/signup',signup);
+router.post('/login',login);
 router.post('/logout', logout);
 
 router.put("/update-profile",protectRoute,updateProfile)
 
 router.get("/check",protectRoute,checkAuth)
+
 export default router;
-// This file defines the authentication routes for the application
