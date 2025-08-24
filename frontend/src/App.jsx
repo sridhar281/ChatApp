@@ -29,7 +29,7 @@ const App1 = () => {
   );
   }
   return (
-    <div className="">
+    <div data-theme="retro">
       <Navbar/>
       <Routes>
         <Route path="/" element={ authuser?<HomePage/>: <Navigate to="/login"/>} />
