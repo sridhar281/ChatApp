@@ -38,6 +38,7 @@ export const useAuthStore = create((set) => ({
       set({ isLoggingIn: false });
     }
   },
+
   signup: async (formData) => {
     set({ isSigningUp: true });
     try {
@@ -93,4 +94,7 @@ export const useAuthStore = create((set) => ({
       set({ isUpdatingProfile: false });
     }
   },
+  
+  //todo: optimize this one
+  setSelectedUser: (selectedUser) => set({ selectedUser}),
 }));

@@ -23,7 +23,10 @@ const userSchema = new mongoose.Schema({
     {
         timestamps: true,
     }
+
+  
 );
+
 // This schema defines the structure of the user document in the MongoDB database
 const User = mongoose.model("User", userSchema);
 export default User;

@@ -1,5 +1,5 @@
-import React,{useEffect} from 'react'
-import { Routes,Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import SignUpPage from './pages/SignUpPage';
@@ -7,41 +7,49 @@ import LoginPage from './pages/LoginPage';
 import Settings from './pages/Settings';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
-import { Navigate } from 'react-router-dom';
-import { useAuthStore } from './store/UseAuthStore';
-import {Loader} from "lucide-react"
+import { useAuthStore } from './store/UseAuthStore';                        
 import { Toaster } from 'react-hot-toast';
-
+import { useThemeStore } from './store/useThemeStore';
+import { Loader } from 'lucide-react';
 
 const App1 = () => {
-  const {authuser,checkAuth,isCheckingAuth} = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  console.log("authuser:", authUser);
+  console.log("isCheckingAuth:", isCheckingAuth);
+
+  const { theme } = useThemeStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-  console.log({'Auth User:': authuser});
-  if(isCheckingAuth){
-    // Show a loading spinner while checking authentication
-  return(
+
+  // 🔥 Apply theme directly to <html>
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  if (isCheckingAuth) {
+    return (
       <div className="flex justify-center items-center h-screen">
         <Loader className="animate-spin text-grey-500" size={72} />
       </div>
-  );
+    );
   }
+
   return (
-    <div data-theme="retro">
-      <Navbar/>
+    <>
+      <Navbar />
       <Routes>
-        <Route path="/" element={ authuser?<HomePage/>: <Navigate to="/login"/>} />
-        <Route path="/signup" element={!authuser?<SignUpPage />:<Navigate to="/"/>} />
-        <Route path="/login" element={!authuser?<LoginPage />:<Navigate to="/"/>} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/profile" element={!authuser?<ProfilePage />:<Navigate to="/"/>} />
-        <Route path="*" element={authuser?<NotFoundPage />:<Navigate to="/"/>} />
-      </Routes> 
-      <Toaster/>
-    </div>
-  )
+        <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
+        <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
+        <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
+        <Route path="/settings" element={authUser?<Settings />:<Navigate to="/login"/>} />
+        <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
+        <Route path="*" element={authUser ? <NotFoundPage /> : <Navigate to="/" />} />
+      </Routes>
+      <Toaster />
+    </>
+  );
 };
 
-export default App1
+export default App1;
