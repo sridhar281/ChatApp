@@ -7,7 +7,7 @@ export const useAuthStore = create((set) => ({
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
-
+  onlineUsers:[],
   // ✅ Check if user is authenticated
   checkAuth: async () => {
     set({ isCheckingAuth: true });
@@ -98,3 +98,5 @@ export const useAuthStore = create((set) => ({
   //todo: optimize this one
   setSelectedUser: (selectedUser) => set({ selectedUser}),
 }));
+
+export default useAuthStore;
