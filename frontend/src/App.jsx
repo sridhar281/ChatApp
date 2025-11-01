@@ -13,10 +13,10 @@ import { useThemeStore } from './store/useThemeStore';
 import { Loader } from 'lucide-react';
 
 const App1 = () => {
-  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth,onlineUsers} = useAuthStore();
   console.log("authuser:", authUser);
   console.log("isCheckingAuth:", isCheckingAuth);
-
+  console.log("onlineUsers:", onlineUsers);
   const { theme } = useThemeStore();
 
   useEffect(() => {

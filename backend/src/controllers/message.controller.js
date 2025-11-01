@@ -1,92 +1,121 @@
 import Message from '../models/message.model.js';
 import User from '../models/user.model.js';
-import cloudinary from 'cloudinary';
+import cloudinary from '../lib/cloudinary.js';
+import mongoose from 'mongoose';
+import { io, getReceiverSocketId } from '../lib/socket.js';  // ← Add this import
 
-// === SEND MESSAGE ===
-export const sendMessage = async (req, res) => {
+export const getUsersForSidebar = async (req, res) => {
   try {
-    const { text, image } = req.body;
-    const { id: receiverId } = req.params;
-    const senderId = req.user._id;
-
-    if (!text && !image) {
-      return res.status(400).json({ error: "Message content is required" });
-    }
-
-    let imageUrl = "";
-    if (image) {
-      const uploaded = await cloudinary.uploader.upload(image, {
-        folder: "chat_images",
-      });
-      imageUrl = uploaded.secure_url;
-    }
-
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      text: text || "",
-      image: imageUrl,
-    });
-
-    await newMessage.save();
-    res.status(201).json(newMessage);
+    const loggedInUserId = req.user._id;
+    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select('-password');
+    res.status(200).json(filteredUsers);
   } catch (error) {
-    console.error("Error in sendMessage:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error in getUsersForSidebar:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// === GET MESSAGES ===
 export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
-    const senderId = req.user._id;
+    const myId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(userToChatId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
 
     const messages = await Message.find({
       $or: [
-        { senderId, receiverId: userToChatId },
-        { senderId: userToChatId, receiverId: senderId },
+        { senderId: myId, receiverId: userToChatId },
+        { senderId: userToChatId, receiverId: myId },
       ],
     }).sort({ createdAt: 1 });
 
     res.status(200).json(messages);
   } catch (error) {
-    console.error("Error in getMessages:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error in getMessages controller:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// === GET USERS FOR SIDEBAR ===
-export const getUsersForSidebar = async (req, res) => {
+export const sendMessage = async (req, res) => {
   try {
-    const loggedInUserId = req.user._id;
-    const users = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
-    res.status(200).json(users);
-  } catch (error) {
-    console.error("Error in getUsersForSidebar:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-};
+    const { text, image, video } = req.body;  // Updated: Add video
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
 
-// === DELETE MESSAGE ===
-export const deleteMessage = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const message = await Message.findById(id);
+    console.log('sendMessage request:', { text, image: image ? 'present' : 'none', video: video ? 'present' : 'none', receiverId, senderId });
 
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
+    // Validate inputs
+    if (!receiverId || !mongoose.Types.ObjectId.isValid(receiverId)) {
+      return res.status(400).json({ error: 'Invalid receiver ID' });
+    }
+    if (!senderId || !mongoose.Types.ObjectId.isValid(senderId)) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid sender ID' });
+    }
+    if (!text && !image && !video) {  // Updated: Include video
+      return res.status(400).json({ error: 'Message text, image, or video is required' });
     }
 
-    // Only sender can delete
-    if (message.senderId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: "You can only delete your own messages" });
+    // Validate receiver exists
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return res.status(400).json({ error: 'Receiver not found' });
     }
 
-    await Message.findByIdAndDelete(id);
-    res.status(200).json({ message: "Message deleted successfully" });
+    let imageUrl = '', videoUrl = '';  // Updated: Separate vars
+
+    // Image upload (existing)
+    if (image) {
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(image, {
+          folder: 'chat_media',
+          resource_type: 'image',
+        });
+        imageUrl = uploadResponse.secure_url;
+      } catch (error) {
+        console.error('Image upload error:', error);
+        imageUrl = '';
+      }
+    }
+
+    // New: Video upload
+    if (video) {
+      try {
+        console.log('Attempting Cloudinary video upload...');
+        const uploadResponse = await cloudinary.uploader.upload(video, {
+          folder: 'chat_media',
+          resource_type: 'video',  // Key change
+          transformation: [{ quality: 'auto:good' }],  // Optimize video
+        });
+        videoUrl = uploadResponse.secure_url;
+        console.log('Video upload successful:', videoUrl);
+      } catch (error) {
+        console.error('Video upload error:', error);
+        videoUrl = '';
+      }
+    }
+
+    const newMessage = new Message({
+      senderId,
+      receiverId,
+      text: text || '',
+      image: imageUrl,
+      video: videoUrl,  // New
+    });
+
+    await newMessage.save();
+    console.log('Message saved:', newMessage);
+
+    // Real-time emit (existing)
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
+
+    res.status(201).json(newMessage);
   } catch (error) {
-    console.error("Error in deleteMessage:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error('Error in sendMessage controller:', error);
+    res.status(500).json({ error: `Internal server error: ${error.message}` });
   }
 };
