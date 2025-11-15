@@ -7,7 +7,7 @@ import LoginPage from './pages/LoginPage';
 import Settings from './pages/Settings';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
-import { useAuthStore } from './store/UseAuthStore';                        
+import { useAuthStore } from './store/useAuthStore';                        
 import { Toaster } from 'react-hot-toast';
 import { useThemeStore } from './store/useThemeStore';
 import { Loader } from 'lucide-react';
