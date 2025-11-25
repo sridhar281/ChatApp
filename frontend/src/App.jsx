@@ -7,13 +7,15 @@ import LoginPage from './pages/LoginPage';
 import Settings from './pages/Settings';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
-import { useAuthStore } from './store/UseAuthStore';                        
+
+import UseAuthStore from "./store/UseAuthStore";
+
 import { Toaster } from 'react-hot-toast';
 import { useThemeStore } from './store/useThemeStore';
 import { Loader } from 'lucide-react';
 
 const App1 = () => {
-  const { authUser, checkAuth, isCheckingAuth,onlineUsers} = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth,onlineUsers} = UseAuthStore();
   console.log("authuser:", authUser);
   console.log("isCheckingAuth:", isCheckingAuth);
   console.log("onlineUsers:", onlineUsers);
