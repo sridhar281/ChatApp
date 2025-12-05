@@ -8,7 +8,7 @@ import Settings from './pages/Settings';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
-import UseAuthStore from "./store/UseAuthStore";
+import UseAuthStore from "./store/useAuthStore";
 
 import { Toaster } from 'react-hot-toast';
 import { useThemeStore } from './store/useThemeStore';
